@@ -1,0 +1,130 @@
+================================================================
+  ANÁLISIS LÉXICO — Dart Analyzer
+  Desarrollador : JairoRodriguez
+  Algoritmo     : algoritmo_jairo.dart
+  Fecha/Hora    : 14/06/2026 16:15:33
+================================================================
+
+TOKENS RECONOCIDOS (116):
+Línea   Tipo                    Valor
+----------------------------------------------------------------
+1       INT                     int
+1       IDENTIFICADOR           edad
+1       ASIGNACION              =
+1       ENTERO                  25
+2       DOUBLE                  double
+2       IDENTIFICADOR           precio
+2       ASIGNACION              =
+2       FLOTANTE                9.99
+3       STRING_TYPE             String
+3       IDENTIFICADOR           nombre
+3       ASIGNACION              =
+3       CADENA                  JairoRodriguez
+4       BOOL                    bool
+4       IDENTIFICADOR           activo
+4       ASIGNACION              =
+4       TRUE                    true
+5       VAR                     var
+5       IDENTIFICADOR           x
+5       ASIGNACION              =
+5       ENTERO                  0
+6       FINAL                   final
+6       INT                     int
+6       IDENTIFICADOR           MAX
+6       ASIGNACION              =
+6       ENTERO                  100
+7       CONST                   const
+7       DOUBLE                  double
+7       IDENTIFICADOR           PI
+7       ASIGNACION              =
+7       FLOTANTE                3.14159
+9       IDENTIFICADOR           x
+9       MAS_IGUAL               +=
+9       ENTERO                  1
+10      IDENTIFICADOR           x
+10      MENOS_IGUAL             -=
+10      ENTERO                  0
+11      IDENTIFICADOR           x
+11      PRODUCTO_IGUAL          *=
+11      ENTERO                  1
+12      IDENTIFICADOR           x
+12      DIVISION_IGUAL          /=
+12      ENTERO                  1
+14      BOOL                    bool
+14      IDENTIFICADOR           esMayor
+14      ASIGNACION              =
+14      IDENTIFICADOR           edad
+14      MAYOR_IGUAL             >=
+14      ENTERO                  18
+15      BOOL                    bool
+15      IDENTIFICADOR           esIgual
+15      ASIGNACION              =
+15      IDENTIFICADOR           edad
+15      IGUAL_IGUAL             ==
+15      ENTERO                  25
+16      BOOL                    bool
+16      IDENTIFICADOR           esDiferente
+16      ASIGNACION              =
+16      IDENTIFICADOR           precio
+16      DIFERENTE               !=
+16      FLOTANTE                0.0
+17      BOOL                    bool
+17      IDENTIFICADOR           esMenor
+17      ASIGNACION              =
+17      IDENTIFICADOR           precio
+17      MENOR                   <
+17      ENTERO                  100
+18      BOOL                    bool
+18      IDENTIFICADOR           esMenorIgual
+18      ASIGNACION              =
+18      IDENTIFICADOR           precio
+18      MENOR_IGUAL             <=
+18      FLOTANTE                9.99
+19      BOOL                    bool
+19      IDENTIFICADOR           esMayorQ
+19      ASIGNACION              =
+19      IDENTIFICADOR           precio
+19      MAYOR                   >
+19      FLOTANTE                5.0
+20      BOOL                    bool
+20      IDENTIFICADOR           esAlto
+20      ASIGNACION              =
+20      IDENTIFICADOR           edad
+20      MAYOR_IGUAL             >=
+20      ENTERO                  18
+22      INT                     int
+22      IDENTIFICADOR           nivel
+22      ASIGNACION              =
+22      ENTERO                  3
+23      DOUBLE                  double
+23      IDENTIFICADOR           nota
+23      ASIGNACION              =
+23      FLOTANTE                87.5
+24      BOOL                    bool
+24      IDENTIFICADOR           aprobado
+24      ASIGNACION              =
+24      IDENTIFICADOR           nota
+24      MAYOR_IGUAL             >=
+24      FLOTANTE                60.0
+25      BOOL                    bool
+25      IDENTIFICADOR           reprobado
+25      ASIGNACION              =
+25      IDENTIFICADOR           nota
+25      MENOR                   <
+25      FLOTANTE                60.0
+26      BOOL                    bool
+26      IDENTIFICADOR           exacto
+26      ASIGNACION              =
+26      IDENTIFICADOR           nota
+26      IGUAL_IGUAL             ==
+26      FLOTANTE                87.5
+27      BOOL                    bool
+27      IDENTIFICADOR           distinto
+27      ASIGNACION              =
+27      IDENTIFICADOR           nivel
+27      DIFERENTE               !=
+27      ENTERO                  0
+
+ERRORES: Ninguno
+
+================================================================
