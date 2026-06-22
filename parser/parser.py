@@ -163,6 +163,79 @@ def p_if(p):
     sentencia : IF PAREN_IZQ condicion PAREN_DER LLAVE_IZQ sentencias LLAVE_DER
     '''
 
+#inicio aporte carlos
+
+# --- Estructura de datos: Mapa ---
+def p_declarar_mapa(p):
+    '''
+    sentencia : MAP_TYPE MENOR STRING_TYPE COMA INT MAYOR IDENTIFICADOR ASIGNACION mapa PUNTO_COMA
+              | MAP_TYPE MENOR STRING_TYPE COMA DOUBLE MAYOR IDENTIFICADOR ASIGNACION mapa PUNTO_COMA
+              | MAP_TYPE MENOR STRING_TYPE COMA STRING_TYPE MAYOR IDENTIFICADOR ASIGNACION mapa PUNTO_COMA
+    '''
+
+def p_mapa(p):
+    '''
+    mapa : LLAVE_IZQ pares LLAVE_DER
+         | LLAVE_IZQ LLAVE_DER
+    '''
+
+def p_pares(p):
+    '''
+    pares : pares COMA par
+          | par
+    '''
+
+def p_par(p):
+    '''
+    par : CADENA DOS_PUNTOS valor
+    '''
+
+def p_asignar_clave_mapa(p):
+    '''
+    sentencia : IDENTIFICADOR CORCHETE_IZQ CADENA CORCHETE_DER ASIGNACION valor PUNTO_COMA
+    '''
+
+def p_acceder_clave_mapa(p):
+    '''
+    expresion : IDENTIFICADOR CORCHETE_IZQ CADENA CORCHETE_DER
+    '''
+
+# --- Eestructuras de control: else / else if, while ---
+
+def p_if_else(p):
+    '''
+    sentencia : IF PAREN_IZQ condicion PAREN_DER LLAVE_IZQ sentencias LLAVE_DER ELSE LLAVE_IZQ sentencias LLAVE_DER
+    '''
+
+def p_if_elseif(p):
+    '''
+    sentencia : IF PAREN_IZQ condicion PAREN_DER LLAVE_IZQ sentencias LLAVE_DER ELSE IF PAREN_IZQ condicion PAREN_DER LLAVE_IZQ sentencias LLAVE_DER
+              | IF PAREN_IZQ condicion PAREN_DER LLAVE_IZQ sentencias LLAVE_DER ELSE IF PAREN_IZQ condicion PAREN_DER LLAVE_IZQ sentencias LLAVE_DER ELSE LLAVE_IZQ sentencias LLAVE_DER
+    '''
+
+def p_while(p):
+    '''
+    sentencia : WHILE PAREN_IZQ condicion PAREN_DER LLAVE_IZQ sentencias LLAVE_DER
+    '''
+
+# --- Tipo de función: void ---
+
+def p_funcion_void(p):
+    '''
+    sentencia : VOID IDENTIFICADOR PAREN_IZQ parametros PAREN_DER LLAVE_IZQ sentencias LLAVE_DER
+              | VOID IDENTIFICADOR PAREN_IZQ PAREN_DER LLAVE_IZQ sentencias LLAVE_DER
+    '''
+
+def p_print(p):
+    '''
+    sentencia : PRINT PAREN_IZQ valor PAREN_DER PUNTO_COMA
+    '''
+
+def p_llamada_funcion_sentencia(p):
+    '''
+    sentencia : IDENTIFICADOR PAREN_IZQ argumentos PAREN_DER PUNTO_COMA
+              | IDENTIFICADOR PAREN_IZQ PAREN_DER PUNTO_COMA
+    '''
 
 errores_sintacticos = []
 
@@ -232,6 +305,16 @@ def analizar_sintactico(codigo, usuario):
     errores_sintacticos.clear()
 
     lexer_instance = lex.lex(module=lexer_module)
+    
+    token_original = lexer_instance.token
+
+    def token_sin_comentarios():
+        tok = token_original()
+        while tok and tok.type in ('COMENTARIO_LINEA', 'COMENTARIO_BLOQUE'):
+            tok = token_original()
+        return tok
+
+    lexer_instance.token = token_sin_comentarios
 
     parser.parse(codigo, lexer=lexer_instance)
 
