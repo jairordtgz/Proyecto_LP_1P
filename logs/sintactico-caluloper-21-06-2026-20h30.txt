@@ -1,0 +1,7 @@
+============================================================
+ANALISIS SINTACTICO DART
+Usuario: caluloper
+Fecha: 21/06/2026 20:30:44
+============================================================
+
+Analisis completado sin errores sintacticos
