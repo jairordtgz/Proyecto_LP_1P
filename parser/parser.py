@@ -30,8 +30,6 @@ def p_declarar_variable(p):
               | BOOL IDENTIFICADOR ASIGNACION valor PUNTO_COMA
               | VAR IDENTIFICADOR ASIGNACION valor PUNTO_COMA
     '''
-    tipo = tipo_desde_token(p.slice[1].type, p[4])
-    registrar_variable(p, p[2], tipo, False, p[4], p.lineno(2))
     
 def p_declarar_constante(p):
     '''
@@ -44,8 +42,6 @@ def p_declarar_constante(p):
               | CONST STRING_TYPE IDENTIFICADOR ASIGNACION valor PUNTO_COMA
               | CONST BOOL IDENTIFICADOR ASIGNACION valor PUNTO_COMA
     '''
-    tipo = tipo_desde_token(p.slice[2].type, p[5])
-    registrar_variable(p, p[3], tipo, True, p[5], p.lineno(3))
     
 def p_reasignacion(p):
     '''
@@ -55,8 +51,6 @@ def p_reasignacion(p):
               | IDENTIFICADOR PRODUCTO_IGUAL valor PUNTO_COMA
               | IDENTIFICADOR DIVISION_IGUAL valor PUNTO_COMA
     '''
-    verificar_declarada(p, p[1], p.lineno(1))
-    verificar_modificacion_constante(p, p[1], p.lineno(1))
 
 def p_valor(p):
     '''
@@ -66,18 +60,11 @@ def p_valor(p):
           | TRUE
           | FALSE
     '''
-    if p.slice[1].type == 'CADENA':
-        p[0] = ('String', p[1])
-    elif p.slice[1].type in ('TRUE', 'FALSE'):
-        p[0] = ('bool', p[1])
-    else:
-        p[0] = p[1]
     
 def p_expresion_parentesis(p):
     '''
     expresion : PAREN_IZQ expresion PAREN_DER
     '''
-    p[0] = p[2]
     
 def p_operacion_matematica(p):
     '''
@@ -86,8 +73,6 @@ def p_operacion_matematica(p):
               | expresion PRODUCTO expresion
               | expresion DIVISION expresion
     '''
-    tipo = verificar_operacion(p, p[2], p[1], p[3])
-    p[0] = (tipo, None)
 
 def p_expresion_valor(p):
     '''
@@ -95,13 +80,6 @@ def p_expresion_valor(p):
               | FLOTANTE
               | IDENTIFICADOR
     '''
-    tipo_token = p.slice[1].type
-    if tipo_token == 'ENTERO':
-        p[0] = ('int', p[1])
-    elif tipo_token == 'FLOTANTE':
-        p[0] = ('double', p[1])
-    else:
-        p[0] = (verificar_declarada(p, p[1], p.lineno(1)), None)
 
 def p_condicion_relacional(p):
     '''
@@ -112,20 +90,17 @@ def p_condicion_relacional(p):
               | expresion IGUAL_IGUAL expresion
               | expresion DIFERENTE expresion
     '''
-    p[0] = ('bool', None)
 
 def p_condicion_logica(p):
     '''
     condicion : condicion AND condicion
               | condicion OR condicion
     '''
-    p[0] = ('bool', None)
 
 def p_condicion_negada(p):
     '''
     condicion : NOT condicion
     '''
-    p[0] = ('bool', None)
 
 def p_declarar_ed_lista(p):
     '''
@@ -271,6 +246,13 @@ profundidad_bucle  = 0    # contador de bucles anidados (usado también por R6)
 
 # Producción vacía: se reduce al entrar al cuerpo de un bucle,
 # incrementando el contador antes de procesar las sentencias internas.
+def p_marca_inicio_bucle(p):
+    '''
+    marca_bucle :
+    '''
+    global profundidad_bucle
+    profundidad_bucle += 1
+
 def registrar_variable(p, nombre, tipo, constante, valor, linea):
     tabla_simbolos[nombre] = {
         'tipo':      tipo,
@@ -410,6 +392,16 @@ def p_incremento(p):
                | IDENTIFICADOR ASIGNACION expresion
     '''
 
+def p_for(p):
+    '''
+    sentencia : FOR PAREN_IZQ sentencia condicion PUNTO_COMA incremento PAREN_DER LLAVE_IZQ sentencias LLAVE_DER
+    '''
+
+def p_for_in(p):
+    '''
+    sentencia : FOR PAREN_IZQ VAR IDENTIFICADOR IN IDENTIFICADOR PAREN_DER LLAVE_IZQ sentencias LLAVE_DER
+    '''
+
 # --- Tipo de función: parámetro opcional con valor por defecto ---
 
 def p_parametro_opcional(p):
@@ -440,6 +432,8 @@ def p_leer_teclado(p):
 # FIN APORTE — Benjamin Cedeño
 
 
+parser = yacc.yacc()
+
 def analizar_sintactico(codigo, usuario):
 
     errores_sintacticos.clear()
@@ -461,12 +455,63 @@ def analizar_sintactico(codigo, usuario):
     generar_log_sintactico(usuario)
 
 
-# INICIO APORTE Benjamin Cedeno (Semantico)
+#inicio aporte carlos
+
+def generar_log_semantico(usuario):
+
+    ahora      = datetime.now()
+    nombre_log = f"semantico-{usuario}-{ahora.strftime('%d-%m-%Y-%Hh%M')}.txt"
+
+    carpeta = os.path.join(os.path.dirname(__file__), '..', 'logs')
+    os.makedirs(carpeta, exist_ok=True)
+    ruta = os.path.join(carpeta, nombre_log)
+
+    with open(ruta, "w", encoding="utf-8") as archivo:
+        archivo.write("=" * 60 + "\n")
+        archivo.write("ANALISIS SEMANTICO DART\n")
+        archivo.write(f"Usuario: {usuario}\n")
+        archivo.write(f"Fecha: {ahora.strftime('%d/%m/%Y %H:%M:%S')}\n")
+        archivo.write("=" * 60 + "\n\n")
+
+        if errores_semanticos:
+            archivo.write("ERRORES SEMANTICOS\n")
+            archivo.write("-" * 60 + "\n")
+            for error in errores_semanticos:
+                archivo.write(error + "\n")
+        else:
+            archivo.write("Analisis completado sin errores semanticos\n")
+
+    print(f"\nLog semantico generado: {ruta}")
+
+
+def analizar_semantico(codigo, usuario):
+    global profundidad_bucle
+    errores_semanticos.clear()
+    tabla_simbolos.clear()
+    profundidad_bucle = 0
+
+    lexer_instance = lex.lex(module=lexer_module)
+    token_original = lexer_instance.token
+
+    def token_sin_comentarios():
+        tok = token_original()
+        while tok and tok.type in ('COMENTARIO_LINEA', 'COMENTARIO_BLOQUE'):
+            tok = token_original()
+        return tok
+
+    lexer_instance.token = token_sin_comentarios
+    parser.parse(codigo, lexer=lexer_instance)
+    generar_log_semantico(usuario)
+
+# fin aporte carlos
+
+
+# INICIO APORTE Benjamin Cedeño (Semántico)
 errores_semanticos = []
-profundidad_bucle = 0   # cuenta cuantos bucles anidados nos rodean
+profundidad_bucle = 0   # cuenta cuántos bucles anidados nos rodean
 
 # --- Marca de entrada a un bucle ---
-# Produccion vacia: se reduce justo cuando yacc "entra" al
+# Producción vacía: se reduce justo cuando yacc "entra" al
 # cuerpo del bucle, antes de procesar las sentencias internas.
 def p_marca_inicio_bucle(p):
     '''
@@ -475,7 +520,7 @@ def p_marca_inicio_bucle(p):
     global profundidad_bucle
     profundidad_bucle += 1
 
-# --- For clasico con marca de bucle ---
+# --- For clásico con marca de bucle ---
 def p_for(p):
     '''
     sentencia : FOR PAREN_IZQ sentencia condicion PUNTO_COMA incremento PAREN_DER LLAVE_IZQ marca_bucle sentencias LLAVE_DER
@@ -499,29 +544,18 @@ def p_break(p):
     if profundidad_bucle == 0:
         linea = p.lineno(1)
         errores_semanticos.append(
-            f"Error semantico [Control, Linea {linea}]: "
+            f"Error semántico [Control, Línea {linea}]: "
             f"'break' solo puede usarse dentro de un bucle."
         )
 
 # --- Regla 5: operaciones entre tipos incompatibles ---
-# Esta funcion auxiliar evita que el programa truene si una
-# expresion todavia no trae tipo definido (por compatibilidad
-# con reglas que aÃºn no propagan tipo).
+# Esta función auxiliar evita que el programa truene si una
+# expresion todavía no trae tipo definido (por compatibilidad
+# con reglas que aún no propagan tipo).
 def _tipo_de(valor):
     if isinstance(valor, tuple) and len(valor) == 2:
         return valor[0]
     return 'desconocido'
-
-def tipo_desde_token(token, valor=None):
-    tipos = {
-        'INT': 'int',
-        'DOUBLE': 'double',
-        'STRING_TYPE': 'String',
-        'BOOL': 'bool'
-    }
-    if token == 'VAR':
-        return _tipo_de(valor)
-    return tipos.get(token, 'desconocido')
 
 def verificar_operacion(p, operador, izquierda, derecha):
     tipo_izq = _tipo_de(izquierda)
@@ -534,16 +568,13 @@ def verificar_operacion(p, operador, izquierda, derecha):
     if tipo_izq != 'desconocido' and tipo_der != 'desconocido':
         linea = p.lineno(2)
         errores_semanticos.append(
-            f"Error semantico [Operacion, Linea {linea}]: "
+            f"Error semántico [Operación, Línea {linea}]: "
             f"El operador '{operador}' no es compatible entre "
             f"tipos '{tipo_izq}' y '{tipo_der}'."
         )
     return 'error'
 
-
-parser = yacc.yacc()
-
-# --- Log semantico ---
+# --- Log semántico ---
 def generar_log_semantico(usuario):
     ahora = datetime.now()
     nombre_log = f"semantico-{usuario}-{ahora.strftime('%d-%m-%Y-%Hh%M')}.txt"
@@ -572,7 +603,6 @@ def generar_log_semantico(usuario):
 def analizar_semantico(codigo, usuario):
     global profundidad_bucle
     errores_semanticos.clear()
-    tabla_simbolos.clear()
     profundidad_bucle = 0
 
     lexer_instance = lex.lex(module=lexer_module)
@@ -589,7 +619,6 @@ def analizar_semantico(codigo, usuario):
     generar_log_semantico(usuario)
 
 
-# FIN APORTE Benjamin Cedeno (Semantico)
-
+# FIN APORTE Benjamin Cedeño (Semántico)
 
 
