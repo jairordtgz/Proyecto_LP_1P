@@ -634,3 +634,120 @@ def analizar_semantico(codigo, usuario):
 
 # fin aporte carlos
 
+
+# INICIO APORTE Benjamin Cedeño (Semántico)
+errores_semanticos = []
+profundidad_bucle = 0   # cuenta cuántos bucles anidados nos rodean
+
+# --- Marca de entrada a un bucle ---
+# Producción vacía: se reduce justo cuando yacc "entra" al
+# cuerpo del bucle, antes de procesar las sentencias internas.
+def p_marca_inicio_bucle(p):
+    '''
+    marca_bucle :
+    '''
+    global profundidad_bucle
+    profundidad_bucle += 1
+
+# --- For clásico con marca de bucle ---
+def p_for(p):
+    '''
+    sentencia : FOR PAREN_IZQ sentencia condicion PUNTO_COMA incremento PAREN_DER LLAVE_IZQ marca_bucle sentencias LLAVE_DER
+    '''
+    global profundidad_bucle
+    profundidad_bucle -= 1
+
+# --- For-in con marca de bucle ---
+def p_for_in(p):
+    '''
+    sentencia : FOR PAREN_IZQ VAR IDENTIFICADOR IN IDENTIFICADOR PAREN_DER LLAVE_IZQ marca_bucle sentencias LLAVE_DER
+    '''
+    global profundidad_bucle
+    profundidad_bucle -= 1
+
+# --- Regla 6: break fuera de bucle ---
+def p_break(p):
+    '''
+    sentencia : BREAK PUNTO_COMA
+    '''
+    if profundidad_bucle == 0:
+        linea = p.lineno(1)
+        errores_semanticos.append(
+            f"Error semántico [Control, Línea {linea}]: "
+            f"'break' solo puede usarse dentro de un bucle."
+        )
+
+# --- Regla 5: operaciones entre tipos incompatibles ---
+# Esta función auxiliar evita que el programa truene si una
+# expresion todavía no trae tipo definido (por compatibilidad
+# con reglas que aún no propagan tipo).
+def _tipo_de(valor):
+    if isinstance(valor, tuple) and len(valor) == 2:
+        return valor[0]
+    return 'desconocido'
+
+def verificar_operacion(p, operador, izquierda, derecha):
+    tipo_izq = _tipo_de(izquierda)
+    tipo_der = _tipo_de(derecha)
+    numericos = ('int', 'double')
+
+    if tipo_izq in numericos and tipo_der in numericos:
+        return 'double' if 'double' in (tipo_izq, tipo_der) else 'int'
+
+    if tipo_izq != 'desconocido' and tipo_der != 'desconocido':
+        linea = p.lineno(2)
+        errores_semanticos.append(
+            f"Error semántico [Operación, Línea {linea}]: "
+            f"El operador '{operador}' no es compatible entre "
+            f"tipos '{tipo_izq}' y '{tipo_der}'."
+        )
+    return 'error'
+
+# --- Log semántico ---
+def generar_log_semantico(usuario):
+    ahora = datetime.now()
+    nombre_log = f"semantico-{usuario}-{ahora.strftime('%d-%m-%Y-%Hh%M')}.txt"
+
+    carpeta = os.path.join(os.path.dirname(__file__), '..', 'logs')
+    os.makedirs(carpeta, exist_ok=True)
+    ruta = os.path.join(carpeta, nombre_log)
+
+    with open(ruta, "w", encoding="utf-8") as archivo:
+        archivo.write("=" * 60 + "\n")
+        archivo.write("ANALISIS SEMANTICO DART\n")
+        archivo.write(f"Usuario: {usuario}\n")
+        archivo.write(f"Fecha: {ahora.strftime('%d/%m/%Y %H:%M:%S')}\n")
+        archivo.write("=" * 60 + "\n\n")
+
+        if errores_semanticos:
+            archivo.write("ERRORES SEMANTICOS\n")
+            archivo.write("-" * 60 + "\n")
+            for error in errores_semanticos:
+                archivo.write(error + "\n")
+        else:
+            archivo.write("Analisis completado sin errores semanticos\n")
+
+    print(f"\nLog semantico generado: {ruta}")
+
+def analizar_semantico(codigo, usuario):
+    global profundidad_bucle
+    errores_semanticos.clear()
+    profundidad_bucle = 0
+
+    lexer_instance = lex.lex(module=lexer_module)
+    token_original = lexer_instance.token
+
+    def token_sin_comentarios():
+        tok = token_original()
+        while tok and tok.type in ('COMENTARIO_LINEA', 'COMENTARIO_BLOQUE'):
+            tok = token_original()
+        return tok
+
+    lexer_instance.token = token_sin_comentarios
+    parser.parse(codigo, lexer=lexer_instance)
+    generar_log_semantico(usuario)
+
+
+# FIN APORTE Benjamin Cedeño (Semántico)
+
+
